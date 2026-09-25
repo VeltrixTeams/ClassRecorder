@@ -47,7 +47,7 @@ its output already exists, so retries and crashes are safe:
 6. **ready**: delete the pieces, keep the full audio, send a push notification.
 
 Vercel Cron (Hobby plan: once a day): `/api/cron/sweep` resumes stuck lectures;
-`/api/cron/retention` hourly deletes expired audio and sets the daily cost cap.
+`/api/cron/retention` deletes expired audio and sets the daily cost cap.
 
 Lecture status: `uploading → queued → finalizing → transcribing → summarizing → indexing → ready`
 (any step can go to `failed`; **Retry** resumes from the step that failed).
