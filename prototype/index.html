@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LectureNote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F4EE;--sheet:#FFFFFF;--ink:#1B1A17;--ink-2:#5C5850;--rule:#E4DED3;
+  --accent:#2B4FD8;--accent-wash:#E8ECFB;--rec:#C93321;--ok:#2F7D4F;--warn:#8A5A00;--err:#9E2A20;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --sans:"IBM Plex Sans","IBM Plex Sans Thai",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#15140F;--sheet:#1E1C17;--ink:#ECE8DF;--ink-2:#A39E93;--rule:#2E2B25;
+  --accent:#8FA6FF;--accent-wash:#232A45;--rec:#FF6A5A;--ok:#6BC98F;--warn:#E0B252;--err:#F28B82;color-scheme:dark}}
+:root[data-theme="dark"],.scene-dark{
+  --paper:#15140F;--sheet:#1E1C17;--ink:#ECE8DF;--ink-2:#A39E93;--rule:#2E2B25;
+  --accent:#8FA6FF;--accent-wash:#232A45;--rec:#FF6A5A;--ok:#6BC98F;--warn:#E0B252;--err:#F28B82;color-scheme:dark}
+
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font:400 15px/1.7 var(--sans);-webkit-font-smoothing:antialiased;touch-action:manipulation}
+::selection{background:var(--accent-wash);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* review switcher (prototype only) */
+.review{position:fixed;top:12px;left:50%;translate:-50% 0;z-index:50;display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--sheet);border:1px solid var(--rule);font-size:13px}
+.review button{padding:6px 12px;border-radius:999px;color:var(--ink-2)}
+.review button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+.screen{min-height:100dvh;max-width:480px;margin-inline:auto;display:none}
+.screen.on{display:flex;flex-direction:column}
+
+/* ---------- Recording ---------- */
+#rec{background:var(--paper);color:var(--ink);padding:calc(64px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+.rec-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.course{display:flex;align-items:center;gap:10px;font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c,#4C7BD9);flex:none}
+.icon-btn{min-width:44px;min-height:44px;display:grid;place-items:center;border-radius:999px;color:var(--ink-2)}
+.icon-btn:hover{background:var(--sheet)}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding-block:24px}
+.ring{position:relative;width:18px;height:18px;border-radius:50%;background:var(--rec)}
+.ring::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--rec);opacity:.45;animation:breathe 2.4s var(--ease) infinite}
+.paused .ring{background:var(--ink-2)}.paused .ring::after{animation:none;opacity:0}
+@keyframes breathe{0%{transform:scale(.7);opacity:.6}70%{transform:scale(1.35);opacity:0}100%{opacity:0}}
+.live{display:flex;align-items:center;gap:14px;font-size:13px;letter-spacing:.04em;color:var(--rec)}
+.paused .live{color:var(--ink-2)}
+.timer{font-size:48px;line-height:1.1;letter-spacing:-.02em}
+.meter{display:flex;align-items:center;gap:3px;height:40px}
+.meter i{width:4px;border-radius:2px;background:var(--ink-2);height:36px;transform:scaleY(.17);transition:transform .12s var(--ease)}
+.trust{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.trust svg{width:16px;height:16px;color:var(--ok)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.big{min-height:64px;border-radius:16px;background:var(--sheet);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;gap:10px;font-weight:500;transition:transform .16s var(--ease),background .16s}
+.big:active{transform:scale(.97)}
+.pins{margin-top:20px;font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:32px}
+.stop{position:relative;overflow:hidden;margin-top:20px;min-height:56px;border-radius:999px;border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;gap:10px;font-weight:500;width:100%}
+.stop .fill{position:absolute;inset:0;background:var(--rec);transform-origin:left;transform:scaleX(0);opacity:.28}
+.stop.holding .fill{transform:scaleX(1);transition:transform 1s linear}
+.stop small{color:var(--ink-2);font-size:13px;font-weight:400}
+.toast{position:fixed;left:50%;bottom:calc(32px + env(safe-area-inset-bottom));translate:-50% 12px;opacity:0;padding:10px 16px;border-radius:999px;background:var(--ink);color:var(--paper);font-size:13px;transition:opacity .2s var(--ease),translate .2s var(--ease);pointer-events:none;z-index:60;white-space:nowrap}
+.toast.show{opacity:1;translate:-50% 0}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgb(0 0 0/.45);display:none;z-index:70;align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.sheet{width:100%;max-width:480px;background:var(--sheet);border-radius:16px 16px 0 0;padding:24px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgb(0 0 0/.06)}
+.sheet h2{font-size:20px;line-height:1.3;font-weight:600}
+.sheet p{color:var(--ink-2);margin-top:8px}
+.sheet .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.btn{min-height:48px;border-radius:999px;font-weight:500;border:1px solid var(--rule)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ---------- Lecture view ---------- */
+#lec{padding-top:calc(56px + env(safe-area-inset-top))}
+.lec-head{position:sticky;top:0;z-index:5;background:var(--paper);padding:8px 16px 0;border-bottom:1px solid var(--rule)}
+.crumb{display:flex;align-items:center;gap:4px;margin-left:-12px}
+.lec-title{font-size:20px;line-height:1.3;font-weight:600}
+.meta{font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:center;margin-top:2px}
+.tabs{display:flex;gap:4px;margin-top:12px;align-items:flex-end}
+.tab{padding:10px 12px;min-height:44px;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--ink)}
+.lang{margin-left:auto;display:flex;border:1px solid var(--rule);border-radius:999px;padding:2px;margin-bottom:8px;font-size:13px}
+.lang button{padding:4px 10px;border-radius:999px;color:var(--ink-2);min-height:32px}
+.lang button[aria-pressed="true"]{background:var(--sheet);color:var(--ink)}
+.panel{padding:20px 16px 160px}
+.panel[hidden]{display:none}
+.disclose{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink-2);padding-bottom:16px;border-bottom:1px solid var(--rule)}
+.disclose svg{width:16px;height:16px;margin-top:3px}
+section{margin-top:28px}
+section h2{font-size:17px;line-height:1.3;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+section h2 svg{width:18px;height:18px;color:var(--ink-2)}
+section h3{font-size:15px;font-weight:600;margin-top:16px}
+.overview{font-size:17px;max-width:62ch}
+ul.pts{list-style:none;padding:0}
+ul.pts li{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--rule)}
+ul.pts li:last-child{border-bottom:0}
+.en{font-style:normal;color:var(--ink-2)}
+.chip{position:relative;flex:none;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:13px;line-height:1;padding:7px 10px;border-radius:999px;background:var(--accent-wash);color:var(--accent);transition:transform .16s var(--ease)}
+.chip::before{content:"";position:absolute;inset:-8px -4px}
+.chip:active{transform:scale(.94)}
+.chip[data-playing]{background:var(--accent);color:var(--sheet)}
+dl{display:grid;gap:0}
+dl div{padding:10px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:1fr auto;gap:2px 12px}
+dt{font-weight:600}dd{grid-column:1;color:var(--ink-2)}dl .chip{grid-row:1/3;grid-column:2;align-self:start}
+.emph li{font-weight:500}
+.task{display:flex;gap:12px;align-items:flex-start}
+.task input{width:20px;height:20px;margin-top:4px;accent-color:var(--accent)}
+.due{font-size:13px;color:var(--warn);font-weight:500}
+.tr{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;padding:10px 8px;margin-inline:-8px;border-radius:10px;transition:background .2s var(--ease)}
+.tr.stu{padding-left:28px}
+.tr .who{grid-column:2;font-size:13px;color:var(--ink-2)}
+.tr p{grid-column:2}
+.tr .chip{grid-row:1/3}
+.tr.now{background:var(--accent-wash)}
+.follow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink-2);margin-bottom:8px}
+.switch{display:flex;align-items:center;gap:8px;min-height:44px}
+.switch input{accent-color:var(--accent);width:18px;height:18px}
+
+.player{position:fixed;left:50%;translate:-50% 0;bottom:0;width:100%;max-width:480px;background:var(--sheet);border-top:1px solid var(--rule);box-shadow:0 -4px 16px rgb(0 0 0/.06);padding:8px 16px calc(12px + env(safe-area-inset-bottom));z-index:10}
+.bar{position:relative;height:20px;display:flex;align-items:center;cursor:pointer}
+.bar::before{content:"";position:absolute;inset:9px 0;border-radius:2px;background:var(--rule)}
+.bar .done{position:absolute;left:0;top:9px;height:2px;background:var(--accent);border-radius:2px}
+.bar .knob{position:absolute;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);translate:-6px 0}
+.ctrl{display:flex;align-items:center;gap:4px;font-size:13px}
+.ctrl .t{color:var(--ink-2);min-width:64px}
+.ctrl .play{width:48px;height:48px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.ctrl .spd{margin-left:auto;min-height:44px;padding:0 12px;border:1px solid var(--rule);border-radius:999px}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="review" aria-label="หน้าจอต้นแบบ">
+  <button data-go="rec" aria-pressed="true">กำลังบันทึก</button>
+  <button data-go="lec" aria-pressed="false">ดูคาบเรียน</button>
+</nav>
+
+<!-- ============ RECORDING ============ -->
+<main id="rec" class="screen on scene-dark" aria-labelledby="rec-course">
+  <div class="rec-top">
+    <div class="course" id="rec-course"><span class="dot" style="--c:#6E8FF0"></span>Linear Algebra · ห้อง 402</div>
+    <button class="icon-btn" aria-label="ย่อหน้าจอ (ยังบันทึกต่อ)"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="live mono"><span class="ring" aria-hidden="true"></span><span id="liveLabel">กำลังบันทึก</span></div>
+    <div class="timer mono" id="timer" role="timer" aria-label="เวลาที่บันทึก">01:12:48</div>
+    <div class="meter" id="meter" aria-hidden="true"></div>
+    <p class="trust" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span id="trust">บันทึกในเครื่องแล้ว · อัปโหลด 142/146 ชิ้น</span></p>
+  </div>
+
+  <div class="actions">
+    <button class="big" id="pinBtn"><svg viewBox="0 0 24 24"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>ปักหมุด</button>
+    <button class="big" id="camBtn"><svg viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>ถ่ายกระดาน</button>
+  </div>
+  <div class="pins" id="pins"><span>ปักหมุดแล้ว</span><span class="chip">41:10</span><span class="chip">1:05:32</span></div>
+
+  <button class="stop" id="stopBtn" aria-describedby="stopHint">
+    <span class="fill" aria-hidden="true"></span>
+    <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    <span>หยุดและบันทึก</span><small id="stopHint">กดค้าง 1 วินาที</small>
+  </button>
+</main>
+
+<!-- ============ LECTURE VIEW ============ -->
+<div id="lec" class="screen">
+  <header class="lec-head">
+    <div class="crumb"><button class="icon-btn" aria-label="กลับ"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><span class="meta">คาบเรียน</span></div>
+    <h1 class="lec-title">Linear Algebra</h1>
+    <p class="meta"><span class="dot" style="--c:#4C7BD9"></span>พฤหัส 25 ก.ย. · 1:30:00 · <span style="color:var(--ok);display:inline-flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M20 6 9 17l-5-5"/></svg>พร้อมแล้ว</span></p>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="p-sum" id="t-sum">สรุป</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-tr" id="t-tr" tabindex="-1">ถอดความ</button>
+      <div class="lang" aria-label="ภาษาสรุป"><button aria-pressed="true">TH</button><button aria-pressed="false" id="enBtn">EN</button></div>
+    </div>
+  </header>
+
+  <main class="panel" id="p-sum" role="tabpanel" aria-labelledby="t-sum">
+    <p class="disclose"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/></svg>สรุปโดย AI — กดเวลาเพื่อฟังเสียงจริงตรงจุดนั้นได้ทุกข้อ</p>
+
+    <section>
+      <h2>ภาพรวม</h2>
+      <p class="overview">คาบนี้อธิบาย ค่าเฉพาะ <i class="en">(eigenvalue)</i> และ เวกเตอร์เฉพาะ <i class="en">(eigenvector)</i> วิธีหาจากสมการลักษณะเฉพาะ และการนำไปใช้ทำ diagonalization ของเมทริกซ์</p>
+    </section>
+
+    <section>
+      <h2>หัวข้อ</h2>
+      <h3>การหา eigenvalue</h3>
+      <ul class="pts">
+        <li><span>ตั้งสมการ det(A − λI) = 0 แล้วแก้หา λ</span><button class="chip" data-t="724">12:04</button></li>
+        <li><span>เมทริกซ์ n×n มี eigenvalue ได้ไม่เกิน n ค่า (นับซ้ำ)</span><button class="chip" data-t="1102">18:22</button></li>
+      </ul>
+      <h3>Diagonalization</h3>
+      <ul class="pts">
+        <li><span>A = PDP⁻¹ เมื่อ P ประกอบด้วย eigenvector ที่อิสระเชิงเส้น</span><button class="chip" data-t="2710">45:10</button></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>นิยาม</h2>
+      <dl>
+        <div><dt>ค่าเฉพาะ <i class="en">(eigenvalue)</i></dt><dd>สเกลาร์ λ ที่ทำให้ Av = λv มีคำตอบ v ≠ 0</dd><button class="chip" data-t="530">8:50</button></div>
+        <div><dt>สมการลักษณะเฉพาะ <i class="en">(characteristic equation)</i></dt><dd>det(A − λI) = 0</dd><button class="chip" data-t="724">12:04</button></div>
+      </dl>
+    </section>
+
+    <section>
+      <h2><svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>อาจารย์เน้น</h2>
+      <ul class="pts emph">
+        <li><span>“ข้อนี้ออกสอบแน่นอน” — การพิสูจน์ว่า eigenvector ต่าง eigenvalue อิสระเชิงเส้น</span><button class="chip" data-t="3510">58:30</button></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>งานที่สั่ง</h2>
+      <ul class="pts">
+        <li><label class="task"><input type="checkbox"><span>HW3 ข้อ 1–8 บทที่ 5<br><span class="due">ส่ง พฤหัส 2 ต.ค.</span></span></label><button class="chip" data-t="5050">1:24:10</button></li>
+      </ul>
+    </section>
+  </main>
+
+  <main class="panel" id="p-tr" role="tabpanel" aria-labelledby="t-tr" hidden>
+    <div class="follow"><span>อาจารย์ · นักศึกษา</span><label class="switch"><input type="checkbox" id="follow" checked>เลื่อนตามเสียง</label></div>
+    <div id="transcript"></div>
+  </main>
+
+  <div class="player" role="region" aria-label="เครื่องเล่นเสียง">
+    <div class="bar" id="bar" role="slider" tabindex="0" aria-label="ตำแหน่งเสียง" aria-valuemin="0" aria-valuemax="5400" aria-valuenow="724"><span class="done" id="done"></span><span class="knob" id="knob"></span></div>
+    <div class="ctrl">
+      <span class="t mono" id="pos">12:04</span>
+      <button class="icon-btn" id="back" aria-label="ย้อน 15 วินาที"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+      <button class="play" id="play" aria-label="เล่น"><svg viewBox="0 0 24 24" id="playIco"><path d="M7 4v16l13-8z"/></svg></button>
+      <span class="t mono" style="text-align:right">1:30:00</span>
+      <button class="spd mono" id="spd" aria-label="ความเร็วการเล่น">1×</button>
+    </div>
+  </div>
+</div>
+
+<!-- hold-to-stop alternative -->
+<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t">
+  <h2 id="sh-t">หยุดบันทึกคาบนี้?</h2>
+  <p>ได้เสียง 1:12:48 · จะอัปโหลดส่วนที่เหลือแล้วเริ่มสรุปให้อัตโนมัติ</p>
+  <div class="row"><button class="btn" id="cancel">บันทึกต่อ</button><button class="btn primary" id="confirm">หยุดและบันทึก</button></div>
+</div></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $=s=>document.querySelector(s), fmt=s=>{s=Math.max(0,Math.floor(s));const h=s/3600|0,m=(s%3600)/60|0,x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")};
+const fmtTimer=s=>[s/3600|0,(s%3600)/60|0,s%60].map(n=>String(n).padStart(2,"0")).join(":");
+const toast=t=>{const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove("show"),1800)};
+
+/* screen switch */
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[data-go]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===b.dataset.go));
+});
+
+/* recording */
+let rec=4368, recording=true;
+const meter=$("#meter"); for(let i=0;i<28;i++) meter.appendChild(document.createElement("i"));
+setInterval(()=>{ if(!recording) return; rec++; $("#timer").textContent=fmtTimer(rec);
+  if(rec%30===0) $("#trust").textContent="บันทึกในเครื่องแล้ว · อัปโหลด "+(Math.floor(rec/30))+"/"+(Math.floor(rec/30))+" ชิ้น"; },1000);
+setInterval(()=>{ if(!recording) return; [...meter.children].forEach(b=>b.style.transform="scaleY("+(.17+Math.random()*.83).toFixed(2)+")") },140);
+
+$("#pinBtn").onclick=()=>{ const t=fmt(rec); const c=document.createElement("span"); c.className="chip"; c.textContent=t; $("#pins").appendChild(c);
+  navigator.vibrate?.(20); toast("ปักหมุดที่ "+t); };
+$("#camBtn").onclick=()=>toast("แนบรูปกระดานที่ "+fmt(rec));
+
+const stop=$("#stopBtn"); let hold;
+const finish=()=>{ recording=false; $("#stage").classList.add("paused"); $("#liveLabel").textContent="หยุดแล้ว"; stop.disabled=true; $("#scrim").classList.remove("on"); toast("บันทึกแล้ว · กำลังอัปโหลดและสรุป"); };
+stop.addEventListener("pointerdown",e=>{ if(stop.disabled) return; stop.classList.add("holding"); hold=setTimeout(finish,1000); });
+["pointerup","pointerleave","pointercancel"].forEach(ev=>stop.addEventListener(ev,()=>{ stop.classList.remove("holding"); clearTimeout(hold); }));
+stop.addEventListener("click",e=>{ if(e.detail===0 && !stop.disabled) $("#scrim").classList.add("on"), $("#confirm").focus(); });  /* keyboard → confirm sheet */
+stop.addEventListener("contextmenu",e=>e.preventDefault());
+$("#cancel").onclick=()=>{ $("#scrim").classList.remove("on"); stop.focus(); };
+$("#confirm").onclick=finish;
+addEventListener("keydown",e=>{ if(e.key==="Escape") $("#scrim").classList.remove("on"); });
+
+/* lecture: transcript */
+const lines=[[512,"t","Okay, so today we're going to talk about eigenvalues and eigenvectors."],[530,"t","An eigenvalue λ is a scalar such that Av equals λv for some non-zero vector v."],[602,"s","Does v have to be non-zero?"],[610,"t","Yes — otherwise every λ would work, which is useless."],[724,"t","So to find them, we set the determinant of A minus λI equal to zero."],[790,"t","This gives us the characteristic polynomial."],[1102,"t","An n by n matrix has at most n eigenvalues, counting multiplicity."],[2710,"t","If you have n independent eigenvectors, you can write A as PDP inverse."],[3510,"t","This proof — definitely on the exam. Write it down."],[5050,"t","Homework three, problems one through eight, due next Thursday."]];
+$("#transcript").innerHTML=lines.map(([t,w,x])=>`<div class="tr ${w}" data-line="${t}"><button class="chip" data-t="${t}">${fmt(t)}</button><span class="who">${w==="t"?"อาจารย์":"นักศึกษา"}</span><p lang="en">${x}</p></div>`).join("");
+
+/* tabs */
+const tabs=[$("#t-sum"),$("#t-tr")];
+const pick=t=>{ tabs.forEach(x=>{const on=x===t; x.setAttribute("aria-selected",on); x.tabIndex=on?0:-1; $("#"+x.getAttribute("aria-controls")).hidden=!on}); t.focus(); };
+tabs.forEach((t,i)=>{ t.onclick=()=>pick(t); t.onkeydown=e=>{ if(e.key==="ArrowRight"||e.key==="ArrowLeft") pick(tabs[(i+1)%2]) } });
+$("#enBtn").onclick=()=>toast("กำลังสร้างสรุปภาษาอังกฤษ… (~20 วินาที)");
+
+/* player (simulated) */
+const DUR=5400; let pos=724, playing=false, speed=1; const speeds=[1,1.25,1.5,2];
+const render=()=>{ const p=pos/DUR*100; $("#done").style.width=p+"%"; $("#knob").style.left=p+"%"; $("#pos").textContent=fmt(pos); $("#bar").setAttribute("aria-valuenow",pos|0); $("#bar").setAttribute("aria-valuetext",fmt(pos));
+  let cur=null; document.querySelectorAll(".tr").forEach(l=>{ if(+l.dataset.line<=pos) cur=l; l.classList.remove("now") });
+  if(cur){ cur.classList.add("now"); if(playing && $("#follow").checked && !$("#p-tr").hidden) cur.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}) } };
+const setPlay=on=>{ playing=on; $("#play").setAttribute("aria-label",on?"หยุดชั่วคราว":"เล่น"); $("#playIco").innerHTML=on?'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>':'<path d="M7 4v16l13-8z"/>'; };
+setInterval(()=>{ if(playing){ pos=Math.min(DUR,pos+speed); render(); } },1000);
+$("#play").onclick=()=>setPlay(!playing);
+$("#back").onclick=()=>{ pos=Math.max(0,pos-15); render(); };
+$("#spd").onclick=()=>{ speed=speeds[(speeds.indexOf(speed)+1)%4]; $("#spd").textContent=speed+"×"; };
+$("#bar").onclick=e=>{ const r=e.currentTarget.getBoundingClientRect(); pos=(e.clientX-r.left)/r.width*DUR; render(); };
+$("#bar").onkeydown=e=>{ if(e.key==="ArrowRight") pos=Math.min(DUR,pos+15); else if(e.key==="ArrowLeft") pos=Math.max(0,pos-15); else return; e.preventDefault(); render(); };
+document.addEventListener("click",e=>{ const c=e.target.closest(".chip[data-t]"); if(!c) return;
+  document.querySelectorAll(".chip[data-playing]").forEach(x=>x.removeAttribute("data-playing")); c.setAttribute("data-playing","");
+  pos=+c.dataset.t; setPlay(true); render(); });
+render();
+</script>
+</body>
+</html>
