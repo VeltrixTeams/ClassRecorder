@@ -10,7 +10,7 @@ function requireCronSecret(req: Request): boolean {
   return (req.headers.get("authorization") ?? "") === `Bearer ${config.cronSecret}`;
 }
 
-/** Runs every minute (vercel.json). Advances any non-terminal lecture whose
+/** Runs on the vercel.json schedule (daily on Hobby). Advances any non-terminal lecture whose
  * lock has expired (crashed/timed-out advance() call), and resubmits STT for
  * a lecture that's been "transcribing" for 30+ min without a webhook
  * (once; then fails it). */

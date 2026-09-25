@@ -46,8 +46,8 @@ its output already exists, so retries and crashes are safe:
 5. **index**: 90 s windows, embeddings, stored for search and chat.
 6. **ready**: delete the pieces, keep the full audio, send a push notification.
 
-Vercel Cron: `/api/cron/sweep` every minute resumes stuck lectures;
-`/api/cron/retention` hourly deletes expired audio and sets the daily cost cap.
+Vercel Cron (Hobby plan: once a day): `/api/cron/sweep` resumes stuck lectures;
+`/api/cron/retention` deletes expired audio and sets the daily cost cap.
 
 Lecture status: `uploading → queued → finalizing → transcribing → summarizing → indexing → ready`
 (any step can go to `failed`; **Retry** resumes from the step that failed).
