@@ -1,60 +1,82 @@
 # LectureNote
 
 Records university lectures, transcribes them, and writes a Thai summary with
-timestamps back to the source audio.
+timestamps back to the source audio. One Next.js app (UI + API + pipeline) on
+Vercel, with Supabase for Postgres/Auth/Storage.
 
 ## Layout
 
 ```
-supabase/   Postgres schema, RLS policies, pgmq queue, hybrid_search (migrations/)
-backend/    FastAPI API + pgmq worker, one Python package (app/)
-web/        Next.js web app (recording, lectures, chat, search)
-prototype/  static HTML/CSS design reference (not run as part of the app)
+web/                  Next.js app
+  src/app/            pages (UI)
+  src/app/api/        API route handlers (+ pipeline, webhooks, cron)
+  src/server/         server-only modules: db, auth, storage, AI gateway, pipeline
+  vercel.json         cron schedules
+supabase/migrations/  Postgres schema, RLS, storage policies, hybrid_search
+prototype/            static design reference
 ```
 
 ## Run locally
 
-### 1. Database (Supabase local stack)
+Needs Docker Desktop running and the Supabase CLI.
 
 ```bash
-cd supabase
-supabase start      # local Postgres + Auth + Storage + Studio
-supabase db reset    # applies migrations/0001_init.sql
-```
+# repo root (the CLI looks for ./supabase)
+supabase start -x studio,postgres-meta
+supabase db reset          # applies all migrations
+supabase status            # prints URL, anon key, service_role key, JWT secret
 
-`supabase start` prints the local API URL, anon key, service role key and
-JWT secret — use those for the `backend/.env` and `web/.env.local` below.
-
-### 2. Backend (API + worker)
-
-```bash
-cd backend
-python -m venv .venv
-.venv/Scripts/activate        # or: source .venv/bin/activate
-pip install -e .[dev]
-cp .env.example .env          # fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-                               # SUPABASE_JWT_SECRET, DATABASE_URL, OPENROUTER_API_KEY,
-                               # DEEPGRAM_API_KEY, VAPID_PRIVATE_KEY/VAPID_SUBJECT
-
-uvicorn app.main:app --reload         # API on :8000
-python -m app.pipeline.worker         # worker (pgmq consumer), separate process
-```
-
-Requires `ffmpeg`/`ffprobe` on PATH for the worker (already in `backend/Dockerfile`).
-
-### 3. Web app
-
-```bash
 cd web
+cp .env.example .env.local # fill in values (see below)
 npm install
-cp .env.example .env.local    # NEXT_PUBLIC_API_URL, NEXT_PUBLIC_SUPABASE_URL,
-                               # NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_VAPID_PUBLIC_KEY
-npm run dev                   # http://localhost:3000
+npm run dev                # http://localhost:3000
 ```
+
+Login codes arrive in Mailpit at http://127.0.0.1:54324.
+
+Locally the pipeline runs up to the Deepgram step, but Deepgram can't reach
+`localhost` to download audio or call the webhook. To test transcription end
+to end locally, expose the app with a tunnel (e.g. `npx cloudflared tunnel
+--url http://localhost:3000`), then set `APP_URL` to the tunnel URL. Supabase
+Storage also has to be reachable, so a cloud Supabase project is easiest.
+
+### Environment variables (`web/.env.local`)
+
+| Var | Where from |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `supabase status` / project settings |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `npx web-push generate-vapid-keys` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` | `supabase status` / project settings |
+| `DATABASE_URL` | local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`; cloud: pooler URL (transaction mode, port 6543) |
+| `OPENROUTER_API_KEY` | openrouter.ai/keys |
+| `DEEPGRAM_API_KEY` | console.deepgram.com |
+| `APP_URL` | public base URL (Deepgram callback target) |
+| `WEBHOOK_SECRET`, `CRON_SECRET` | `openssl rand -hex 32` each |
+| `SUMMARY_MODEL`, `CHAT_MODEL`, `EMBED_MODEL` | optional; defaults in `src/server/config.ts` |
+
+`NEXT_PUBLIC_API_URL` stays empty (API is same-origin under `/api`).
+
+## Deploy to Vercel
+
+1. **Supabase Cloud**: create a project (or add Supabase from the Vercel
+   Marketplace, which also fills in its env vars). Then from the repo root:
+   `supabase link --project-ref <ref>` and `supabase db push`.
+2. **Vercel**: import the GitHub repo, set **Root Directory = `web`**. Plan:
+   **Pro** is required (every-minute cron, 300 s functions).
+3. Add every variable from the table above in Project → Settings → Environment
+   Variables. Set `APP_URL` to the production URL (e.g.
+   `https://lecturenote.vercel.app`) and `CRON_SECRET` (Vercel sends it to the
+   cron routes automatically).
+4. Deploy. `vercel.json` registers the crons: `/api/cron/sweep` (every minute,
+   resumes stuck lectures) and `/api/cron/retention` (hourly, deletes expired
+   audio and sets the daily cost cap flag).
+5. In Supabase → Auth → URL Configuration, set Site URL to the Vercel URL.
 
 ## Tests
 
 ```bash
-cd backend && pytest && ruff check .
-cd web && npm run lint && npx tsc --noEmit && npm test
+cd web
+npx tsc --noEmit
+npx vitest run                                  # unit tests
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npx vitest run   # + DB integration test
 ```

@@ -29,6 +29,7 @@ export interface Lecture {
   error: string | null;
   chunk_count: number | null;
   audio_path: string | null;
+  mime_type: string | null;
   created_at: string;
 }
 

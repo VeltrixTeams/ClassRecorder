@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/lib/useAuth";
 import { api } from "@/lib/api";
-import { LectureRecorder } from "@/lib/recorder";
+import { LectureRecorder, pickMimeType } from "@/lib/recorder";
 import { processLectureQueue, markLectureStopped } from "@/lib/uploadQueue";
 import { formatTimer, formatMs } from "@/lib/format";
 import { ChevronDownIcon, PinIcon, CameraIcon, StopIcon, CheckIcon } from "@/components/icons";
@@ -50,13 +50,23 @@ export default function RecordPage() {
   };
 
   const startRecording = async () => {
-    const lecture = await api.createLecture({ recorded_at: new Date().toISOString() });
+    const mimeType = pickMimeType();
+    const lecture = await api.createLecture({ recorded_at: new Date().toISOString(), mime_type: mimeType });
     lectureIdRef.current = lecture.id;
     const rec = new LectureRecorder(lecture.id);
     rec.onElapsed = (ms) => setElapsedSec(Math.floor(ms / 1000));
     rec.onSegmentUploaded = () => {
       setUploaded((n) => n + 1);
       processLectureQueue(lecture.id).catch(() => {});
+    };
+    rec.onError = (message) => {
+      showToast(message);
+      setRecording(false);
+      setPaused(true);
+      const id = lectureIdRef.current;
+      if (id) {
+        markLectureStopped(id).then(() => processLectureQueue(id)).catch(() => {});
+      }
     };
     recRef.current = rec;
     await rec.start();

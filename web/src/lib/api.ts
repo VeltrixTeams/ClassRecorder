@@ -13,7 +13,9 @@ import type {
   Citation,
 } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+// Same-origin by default (backend now lives under /api in this Next.js app);
+// NEXT_PUBLIC_API_URL only needs to be set to point at a different origin.
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api`;
 
 export class ApiClientError extends Error {
   code: string;
@@ -55,7 +57,7 @@ export const api = {
   deleteCourse: (id: string) => request<void>(`/courses/${id}`, { method: "DELETE" }),
 
   // lectures
-  createLecture: (body: { course_id?: string; title?: string; recorded_at: string }) =>
+  createLecture: (body: { course_id?: string; title?: string; recorded_at: string; mime_type: string }) =>
     request<Lecture>("/lectures", { method: "POST", ...j(body) }),
   uploadUrls: (lectureId: string, indices: number[]) =>
     request<{ urls: { idx: number; url: string; path: string }[] }>(

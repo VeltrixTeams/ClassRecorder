@@ -1,0 +1,91 @@
+
+> web@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.44:3000
+- Environments: .env.local
+✓ Ready in 370ms
+✓ Running next.config.ts took 27ms
+
+ GET /login 200 in 412ms (next.js: 304ms, application-code: 108ms)
+ POST /api/lectures 200 in 149ms (next.js: 66ms, application-code: 82ms)
+ POST /api/lectures/b53b191b-a290-4268-8be0-2959d0d91a39/upload-urls 200 in 673ms (next.js: 598ms, application-code: 75ms)
+ POST /api/lectures/b53b191b-a290-4268-8be0-2959d0d91a39/complete 202 in 710ms (next.js: 612ms, application-code: 98ms)
+ POST /api/pipeline/advance 200 in 544ms (next.js: 218ms, application-code: 326ms)
+Error: deepgram submit failed: 401 {"err_code":"INVALID_AUTH","err_msg":"Invalid credentials.","request_id":"01a0d84b-186a-71b1-91e6-3536f82e92d3"}
+    at submit (src\server\ai\deepgram.ts:29:11)
+    at async runTranscribe (src\server\pipeline\advance.ts:133:21)
+    at async advance (src\server\pipeline\advance.ts:244:37)
+    at async (src\app\api\pipeline\advance\route.ts:20:18)
+    at async (src\server\errors.ts:29:14)
+  27 |   });
+  28 |   if (!resp.ok) {
+> 29 |     throw new Error(`deepgram submit failed: ${resp.status} ${await resp.text()}`);
+     |           ^
+  30 |   }
+  31 |   const data = await resp.json();
+  32 |   const requestId = data.request_id ?? data.metadata?.request_id;
+ POST /api/pipeline/advance 500 in 1305ms (next.js: 2ms, application-code: 1302ms)
+ GET /api/lectures/b53b191b-a290-4268-8be0-2959d0d91a39 200 in 684ms (next.js: 676ms, application-code: 9ms)
+ GET /api/lectures/b53b191b-a290-4268-8be0-2959d0d91a39/audio-url 200 in 685ms (next.js: 669ms, application-code: 16ms)
+ GET /api/me 401 in 23ms (next.js: 18ms, application-code: 5ms)
+ POST /api/lectures 200 in 51ms (next.js: 3ms, application-code: 48ms)
+ POST /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e/upload-urls 200 in 107ms (next.js: 6ms, application-code: 100ms)
+ POST /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e/complete 409 in 28ms (next.js: 10ms, application-code: 18ms)
+ POST /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e/complete 202 in 116ms (next.js: 6ms, application-code: 110ms)
+ POST /api/pipeline/advance 200 in 162ms (next.js: 4ms, application-code: 158ms)
+Error: deepgram submit failed: 401 {"err_code":"INVALID_AUTH","err_msg":"Invalid credentials.","request_id":"01a0d84e-b381-7573-ac5d-e1e107f24fef"}
+    at submit (src\server\ai\deepgram.ts:29:11)
+    at async runTranscribe (src\server\pipeline\advance.ts:138:21)
+    at async advance (src\server\pipeline\advance.ts:249:37)
+    at async (src\app\api\pipeline\advance\route.ts:20:18)
+    at async (src\server\errors.ts:29:14)
+  27 |   });
+  28 |   if (!resp.ok) {
+> 29 |     throw new Error(`deepgram submit failed: ${resp.status} ${await resp.text()}`);
+     |           ^
+  30 |   }
+  31 |   const data = await resp.json();
+  32 |   const requestId = data.request_id ?? data.metadata?.request_id;
+ POST /api/pipeline/advance 500 in 953ms (next.js: 2ms, application-code: 951ms)
+ GET /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e 200 in 14ms (next.js: 6ms, application-code: 8ms)
+ GET /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e/audio-url 200 in 20ms (next.js: 6ms, application-code: 14ms)
+ POST /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e/retry 202 in 807ms (next.js: 752ms, application-code: 55ms)
+ GET /api/lectures/6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e 404 in 12ms (next.js: 6ms, application-code: 6ms)
+ GET /api/cron/sweep 405 in 151ms (next.js: 147ms, application-code: 4ms)
+ POST /api/webhooks/deepgram?lecture=6f30ffbf-a59e-48dc-83b4-ed7431f1ba0e&token=bad 401 in 170ms (next.js: 166ms, application-code: 4ms)
+Error: deepgram submit failed: 401 {"err_code":"INVALID_AUTH","err_msg":"Invalid credentials.","request_id":"01a0d84e-d6d4-7ef0-bea4-ad2bceaab68c"}
+    at submit (src\server\ai\deepgram.ts:29:11)
+    at async runTranscribe (src\server\pipeline\advance.ts:138:21)
+    at async advance (src\server\pipeline\advance.ts:249:37)
+    at async (src\app\api\pipeline\advance\route.ts:20:18)
+    at async (src\server\errors.ts:29:14)
+  27 |   });
+  28 |   if (!resp.ok) {
+> 29 |     throw new Error(`deepgram submit failed: ${resp.status} ${await resp.text()}`);
+     |           ^
+  30 |   }
+  31 |   const data = await resp.json();
+  32 |   const requestId = data.request_id ?? data.metadata?.request_id;
+ POST /api/pipeline/advance 500 in 1009ms (next.js: 2ms, application-code: 1006ms)
+ GET /api/cron/sweep 401 in 9ms (next.js: 4ms, application-code: 5ms)
+ GET /api/cron/sweep 200 in 186ms (next.js: 2.0ms, application-code: 184ms)
+ GET /api/cron/retention 200 in 164ms (next.js: 116ms, application-code: 48ms)
+Error: deepgram submit failed: 401 {"err_code":"INVALID_AUTH","err_msg":"Invalid credentials.","request_id":"01a0d84f-249c-7680-bf65-2b6ca932fbbe"}
+    at submit (src\server\ai\deepgram.ts:29:11)
+    at async runTranscribe (src\server\pipeline\advance.ts:138:21)
+    at async advance (src\server\pipeline\advance.ts:249:37)
+    at async (src\app\api\pipeline\advance\route.ts:20:18)
+    at async (src\server\errors.ts:29:14)
+  27 |   });
+  28 |   if (!resp.ok) {
+> 29 |     throw new Error(`deepgram submit failed: ${resp.status} ${await resp.text()}`);
+     |           ^
+  30 |   }
+  31 |   const data = await resp.json();
+  32 |   const requestId = data.request_id ?? data.metadata?.request_id;
+ POST /api/pipeline/advance 500 in 2.0s (next.js: 2ms, application-code: 2.0s)
+ GET / 200 in 110ms (next.js: 36ms, application-code: 75ms)
+ GET /login 200 in 28ms (next.js: 8ms, application-code: 21ms)

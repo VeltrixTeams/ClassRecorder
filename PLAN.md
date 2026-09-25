@@ -118,3 +118,38 @@ UI process: use `impeccable` skill for design work, then `web-design-guidelines`
 - `cd web && npx tsc --noEmit` clean; `npm run build` ok; `npx vitest run` green.
 - No AI HTTP call outside `ai/gateway.py` + `ai/stt.py`. No secret in web (only NEXT_PUBLIC_ anon key/urls).
 - `.env.example` in backend and web; `README.md` root with run steps.
+
+---
+
+# v2 — All-in-Vercel (supersedes §1 API/Worker/Queue/STT rows, §4, and the backend/ package)
+
+Decision (user, 2026-09-25): one Next.js project on Vercel, backend in TypeScript route handlers. `backend/` (Python) is the reference implementation to port; delete it only after the TS port passes all checks. Supabase stays (via Vercel Marketplace).
+
+## v2.1 Decisions
+| Topic | Decision |
+|---|---|
+| Server code | `web/src/server/**` (plain TS modules, `import "server-only"`), exposed by `web/src/app/api/**/route.ts`. Same §5 contract, mounted under **`/api`** (e.g. `/api/lectures/{id}`). Same origin → no CORS. |
+| DB | `postgres` (postgres.js) with `DATABASE_URL` (Supabase pooler, transaction mode → `prepare: false`). Every query filters `user_id` explicitly, as before. |
+| Auth | `jose`: HS256 via `SUPABASE_JWT_SECRET`, ES256/RS256 via remote JWKS `{SUPABASE_URL}/auth/v1/.well-known/jwks.json`; allowlist exactly those 3 algs; aud `authenticated`. |
+| Recording | ONE `MediaRecorder` per lecture with `timeslice: 30000`, `audioBitsPerSecond: 32000`. Chunks are not standalone but **byte-concatenation of chunks 0..n is a valid file**. Keep IndexedDB queue/resume/409 logic unchanged. Store mimeType on the lecture (`POST /api/lectures` gets `mime_type`). |
+| Finalize (no ffmpeg) | `/complete` verifies chunks (storage list, as now) → step `finalize`: stream-download chunks in idx order and upload concatenation as `{uid}/{lecture_id}/full.{webm|mp4}`; set `audio_path`. |
+| STT | Deepgram pre-recorded **by URL** with **callback**: POST `https://api.deepgram.com/v1/listen?model=nova-3&language=en&diarize=true&smart_format=true&utterances=true&callback={APP_URL}/api/webhooks/deepgram?lecture={id}&token={HMAC(lecture_id, WEBHOOK_SECRET)}` body `{url: signedUrl(1h)}`. Store `stt_request_id`. Webhook verifies HMAC, stores raw result in `stt_results`, builds transcript_segments (port merge.py speaker rule: longest talker = lecturer; group words into sentences), kicks pipeline. STT duration also sets `duration_ms`. OpenRouter STT provider is dropped. |
+| Orchestration | No queue. `server/pipeline/advance.ts`: `advance(lectureId)` = claim lock (`update lectures set locked_until=now()+interval '5 min' where id=$1 and (locked_until is null or locked_until<now()) returning *`), compute next step from existing outputs (port `plan_steps`: finalize → transcribe(submit to Deepgram; waits for webhook) → summarize → index → ready), run ONE step, release lock, then `after(() => fetch('/api/pipeline/advance', {lecture}))` to continue. Triggers: `/complete`, `/retry`, webhook, and **Vercel Cron every minute** `/api/cron/sweep` (advances lectures stuck non-terminal with expired lock; marks transcribing>30 min without webhook → resubmit once, then failed). Internal routes require `Authorization: Bearer ${CRON_SECRET}`. |
+| Function limits | `export const maxDuration = 300` on pipeline/chat routes. Summary map-reduce: if >60k tokens, each 30-min window summary is its own step, results in `summary_parts`, final merge step. |
+| Cron | `vercel.json`: `/api/cron/sweep` `* * * * *`, `/api/cron/retention` `0 * * * *` (retention delete + daily cost cap flag in `app_flags`). Requires Vercel Pro. |
+| Push | `web-push` npm, same VAPID envs. |
+| AI gateway | `server/ai/gateway.ts` — only place calling OpenRouter (chat, chatStream, embed) + `server/ai/deepgram.ts`. Same retry 2s/8s/30s, `ai_usage` logging, same model envs (SUMMARY_MODEL, CHAT_MODEL, EMBED_MODEL). |
+| Tests | vitest for all ported pure logic (merge/speaker, summary validation + drop t>duration + merge_contents, plan steps, citations, auth alg allowlist incl. ES256 via local key, missing indices, HMAC) — port every Python test case. |
+
+## v2.2 Migration `supabase/migrations/0002_vercel.sql`
+- drop pgmq queue `lecture_jobs_q` (and extension if unused); drop `stt_chunks`.
+- `lectures`: add `mime_type text`, `locked_until timestamptz`, `stt_request_id text`, `stt_submitted_at timestamptz`, `stt_attempts int default 0`.
+- add `stt_results(lecture_id pk, user_id, result jsonb, created_at)` + RLS; `summary_parts(lecture_id, user_id, idx, content jsonb, pk(lecture_id,idx))` + RLS; `app_flags(key text pk, value jsonb)` (no RLS access for users).
+- status check: replace `preparing` with `finalizing`.
+
+## v2.3 Workstreams
+| Agent | Owns |
+|---|---|
+| S (server) | `web/src/server/**`, `web/src/app/api/**`, `web/vercel.json`, `supabase/migrations/0002_vercel.sql`, server tests, `web/.env.example` server vars, README deploy section |
+| R (client) | `web/src/lib/recorder.ts`, `uploadQueue.ts`, `api.ts` (base → `/api`, `mime_type`), record page, their tests |
+Done = `tsc`, `next build` (no env), `vitest` green; local run against `supabase start` works for auth + CRUD; then architect deletes `backend/`.
