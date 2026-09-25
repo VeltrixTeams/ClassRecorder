@@ -1,4 +1,5 @@
 # LectureNote — Build Plan
+> **Current architecture: see "v2 — All-in-Vercel" at the end.** Sections 1–8 describe the original Python backend + worker (removed); §3 schema, §5 API contract and §6 UI still apply (API now under `/api`).
 
 Source docs: `PRODUCT.md`, `DESIGN.md`, `prototype/index.html`, backend spec (LectureNote-backend.md) with the review fixes applied below.
 Architect: plans + reviews. Implementers: Sonnet 5 agents, one per workstream.

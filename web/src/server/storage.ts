@@ -79,17 +79,6 @@ export async function download(bucket: string, path: string): Promise<ArrayBuffe
   return resp.arrayBuffer();
 }
 
-/** GET /storage/v1/object/{bucket}/{path} -> readable stream, for large files
- * (e.g. concatenating audio chunks) that shouldn't be buffered whole. */
-export function downloadStream(bucket: string, path: string): Promise<ReadableStream<Uint8Array>> {
-  return fetch(`${config.supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
-    headers: headers(),
-  }).then((resp) => {
-    if (!resp.ok || !resp.body) throw new Error(`downloadStream failed: ${resp.status}`);
-    return resp.body;
-  });
-}
-
 /** POST /storage/v1/object/{bucket}/{path} with the file's bytes (upsert). */
 export async function upload(
   bucket: string,
