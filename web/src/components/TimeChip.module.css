@@ -1,0 +1,25 @@
+.chip {
+  position: relative;
+  flex: none;
+  font-size: 13px;
+  line-height: 1;
+  padding: 7px 10px;
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  transition: transform 160ms var(--ease);
+}
+/* 44px hit area without affecting visual size */
+.chip::before {
+  content: "";
+  position: absolute;
+  inset: -8px -4px;
+}
+.chip:active {
+  transform: scale(.94);
+}
+.chip[data-playing] {
+  background: var(--accent);
+  color: var(--sheet);
+}

@@ -1,0 +1,78 @@
+.player {
+  position: fixed;
+  left: 50%;
+  translate: -50% 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 480px;
+  background: var(--sheet);
+  border-top: 1px solid var(--rule);
+  box-shadow: 0 -4px 16px rgb(0 0 0 / .06);
+  padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+.bar {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.bar::before {
+  content: "";
+  position: absolute;
+  inset: 9px 0;
+  border-radius: 2px;
+  background: var(--rule);
+}
+.done {
+  position: absolute;
+  left: 0;
+  top: 9px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.knob {
+  position: absolute;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  translate: -6px 0;
+}
+.ctrl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.t {
+  color: var(--ink-2);
+  min-width: 64px;
+}
+.iconBtn {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--ink-2);
+}
+.play {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+}
+.spd {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+}

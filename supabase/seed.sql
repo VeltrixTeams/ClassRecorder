@@ -1,0 +1,3 @@
+-- No seed data requiring a real auth.users row.
+-- (courses/lectures/etc. all require a real auth user via FK + RLS,
+-- so there is nothing safe to seed here without a local `supabase auth` signup.)
