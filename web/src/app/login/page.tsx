@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
@@ -7,29 +7,36 @@ import styles from "./page.module.css";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
-  const sendOtp = async (e: React.FormEvent) => {
+  // The magic link lands back here; supabase-js picks the session out of the URL
+  // on init, so just wait for it (or an error in the hash) and move on.
+  useEffect(() => {
+    const linkError = new URLSearchParams(window.location.hash.slice(1)).get("error_description");
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) router.replace("/");
+      else if (linkError) setError(`ลิงก์ใช้ไม่ได้ (${linkError}) กรุณาขอลิงก์ใหม่`);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (s) router.replace("/");
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router]);
+
+  const sendLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
     setBusy(false);
     if (error) setError(error.message);
     else setSent(true);
-  };
-
-  const verifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: "email" });
-    setBusy(false);
-    if (error) setError(error.message);
-    else router.replace("/");
   };
 
   return (
@@ -38,7 +45,7 @@ export default function LoginPage() {
       <p className={styles.sub}>บันทึกคาบเรียน ถอดความ และสรุปภาษาไทยพร้อมลิงก์เวลา</p>
 
       {!sent ? (
-        <form onSubmit={sendOtp} className={styles.form}>
+        <form onSubmit={sendLink} className={styles.form}>
           <label className={styles.label} htmlFor="email">
             อีเมล
           </label>
@@ -53,29 +60,19 @@ export default function LoginPage() {
             placeholder="you@university.ac.th"
           />
           <button className={styles.btn} type="submit" disabled={busy}>
-            {busy ? "กำลังส่ง…" : "ส่งรหัสเข้าสู่ระบบ"}
+            {busy ? "กำลังส่ง…" : "ส่งลิงก์เข้าสู่ระบบ"}
           </button>
         </form>
       ) : (
-        <form onSubmit={verifyOtp} className={styles.form}>
-          <label className={styles.label} htmlFor="otp">
-            รหัส OTP จากอีเมล
-          </label>
-          <input
-            id="otp"
-            className={styles.input}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            spellCheck={false}
-            required
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="123456"
-          />
-          <button className={styles.btn} type="submit" disabled={busy}>
-            {busy ? "กำลังยืนยัน…" : "ยืนยันและเข้าสู่ระบบ"}
+        <div className={styles.form}>
+          <p>
+            ส่งลิงก์ไปที่ <strong>{email}</strong> แล้ว เปิดอีเมลแล้วกด &quot;Sign in&quot;
+            บนเครื่องและเบราว์เซอร์นี้เพื่อเข้าสู่ระบบ
+          </p>
+          <button className={styles.btn} type="button" onClick={() => setSent(false)}>
+            ใช้อีเมลอื่น / ส่งใหม่
           </button>
-        </form>
+        </div>
       )}
       {error && (
         <p className={styles.error} role="alert">
