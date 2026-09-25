@@ -27,7 +27,7 @@ async function translateSummary(
   );
   const text = resp.choices?.[0]?.message?.content;
   try {
-    return summaryContentSchema.parse(JSON.parse(text));
+    return summaryContentSchema.parse(JSON.parse(text ?? ""));
   } catch {
     return content;
   }

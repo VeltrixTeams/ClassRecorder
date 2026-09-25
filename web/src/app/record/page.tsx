@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/lib/useAuth";
 import { api } from "@/lib/api";
@@ -10,11 +10,19 @@ import { ChevronDownIcon, PinIcon, CameraIcon, StopIcon, CheckIcon } from "@/com
 import styles from "./page.module.css";
 
 const CONSENT_KEY = "lecturenote_consent_acked";
+const noopSubscribe = () => () => {};
 
 export default function RecordPage() {
   const session = useRequireAuth();
   const router = useRouter();
-  const [needsConsent, setNeedsConsent] = useState(false);
+  // Read after mount (not during SSR) so the static prerender and first client render match.
+  const consentAcked = useSyncExternalStore(
+    noopSubscribe,
+    () => localStorage.getItem(CONSENT_KEY) !== null,
+    () => true,
+  );
+  const [consentGiven, setConsentGiven] = useState(false);
+  const needsConsent = !consentAcked && !consentGiven;
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -28,9 +36,6 @@ export default function RecordPage() {
   const [holding, setHolding] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (!localStorage.getItem(CONSENT_KEY)) setNeedsConsent(true);
-  }, []);
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -75,7 +80,7 @@ export default function RecordPage() {
 
   const consentAndStart = () => {
     localStorage.setItem(CONSENT_KEY, "1");
-    setNeedsConsent(false);
+    setConsentGiven(true);
     startRecording().catch(() => showToast("เริ่มบันทึกไม่สำเร็จ — ตรวจสอบสิทธิ์ไมโครโฟน"));
   };
 

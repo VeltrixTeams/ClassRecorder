@@ -221,7 +221,7 @@ async function callLlmForContent(transcriptTextStr: string, opts: CallLlmOpts): 
     });
     const raw = resp.choices?.[0]?.message?.content;
     try {
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw ?? "");
       return summaryContentSchema.parse(parsed);
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);

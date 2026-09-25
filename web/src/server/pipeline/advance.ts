@@ -1,4 +1,5 @@
 import "server-only";
+import type postgres from "postgres";
 import { after } from "next/server";
 import { config } from "../config";
 import { sql } from "../db";
@@ -91,7 +92,7 @@ async function setStatus(
   const db = sql();
   if (opts.progress !== undefined) {
     await db`
-      update lectures set status=${status}, progress=${db.json(opts.progress as any)}, error=${opts.error ?? null}
+      update lectures set status=${status}, progress=${db.json(opts.progress as postgres.JSONValue)}, error=${opts.error ?? null}
       where id=${lectureId}
     `;
   } else {
@@ -150,7 +151,7 @@ async function runSegments(lecture: LectureRow, sttResult: unknown): Promise<voi
     for (const s of segments) {
       await tx`
         insert into transcript_segments(lecture_id, user_id, start_ms, end_ms, speaker, text, words)
-        values (${lecture.id}, ${lecture.user_id}, ${s.start_ms}, ${s.end_ms}, ${s.speaker}, ${s.text}, ${tx.json(s.words as any)})
+        values (${lecture.id}, ${lecture.user_id}, ${s.start_ms}, ${s.end_ms}, ${s.speaker}, ${s.text}, ${tx.json(s.words as unknown as postgres.JSONValue)})
       `;
     }
   });
@@ -172,7 +173,7 @@ async function runSummarize(lecture: LectureRow): Promise<void> {
     lectureId: lecture.id,
   });
   await db`
-    insert into summaries(lecture_id, user_id, lang, content) values (${lecture.id}, ${lecture.user_id}, 'th', ${db.json(content as any)})
+    insert into summaries(lecture_id, user_id, lang, content) values (${lecture.id}, ${lecture.user_id}, 'th', ${db.json(content as postgres.JSONValue)})
     on conflict (lecture_id, lang) do update set content=excluded.content, stale=false
   `;
 }

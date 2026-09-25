@@ -1,4 +1,5 @@
 import "server-only";
+import type postgres from "postgres";
 import { sql } from "@/server/db";
 import { verifyHmac } from "@/server/ai/deepgram";
 import { kick } from "@/server/pipeline/advance";
@@ -24,7 +25,7 @@ export const POST = route(async (req: Request) => {
   if (!lecture) return apiError(404, "not_found", "lecture not found");
 
   await db`
-    insert into stt_results(lecture_id, user_id, result) values (${lectureId}, ${lecture.user_id}, ${db.json(result as any)})
+    insert into stt_results(lecture_id, user_id, result) values (${lectureId}, ${lecture.user_id}, ${db.json(result as postgres.JSONValue)})
     on conflict (lecture_id) do update set result=excluded.result
   `;
 

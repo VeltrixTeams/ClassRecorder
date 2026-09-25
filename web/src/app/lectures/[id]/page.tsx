@@ -140,11 +140,13 @@ export default function LecturePage({ params }: { params: Promise<{ id: string }
 }
 
 function SummaryPanel({ lectureId, lang }: { lectureId: string; lang: "th" | "en" }) {
-  const [summary, setSummary] = useState<Summary | null>(null);
+  // Tagged with the request key so a stale summary is never shown after lectureId/lang changes.
+  const key = `${lectureId}:${lang}`;
+  const [loaded, setLoaded] = useState<{ key: string; summary: Summary } | null>(null);
   useEffect(() => {
-    setSummary(null);
-    api.summary(lectureId, lang).then(setSummary);
-  }, [lectureId, lang]);
+    api.summary(lectureId, lang).then((summary) => setLoaded({ key, summary }));
+  }, [lectureId, lang, key]);
+  const summary = loaded?.key === key ? loaded.summary : null;
   if (!summary) return <div className={styles.panel}>กำลังโหลด…</div>;
   const c = summary.content;
   return (

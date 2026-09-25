@@ -124,8 +124,14 @@ export interface ChatOpts {
   client?: HttpClient;
 }
 
+/** The parts of an OpenRouter chat completion body that callers read. */
+export interface ChatCompletion {
+  choices: { message: { content: string | null } }[];
+  usage?: Usage;
+}
+
 /** Non-streaming chat completion. Returns the parsed JSON body. */
-export async function chat(messages: ChatMessage[], opts: ChatOpts = {}): Promise<any> {
+export async function chat(messages: ChatMessage[], opts: ChatOpts = {}): Promise<ChatCompletion> {
   const model = opts.model ?? config.chatModel;
   const body: Record<string, unknown> = { model, messages, usage: { include: true } };
   if (opts.responseFormat) body.response_format = opts.responseFormat;
@@ -136,7 +142,7 @@ export async function chat(messages: ChatMessage[], opts: ChatOpts = {}): Promis
     headers: headers(),
     sleep: opts.sleep,
   });
-  const data = await resp.json();
+  const data = (await resp.json()) as ChatCompletion;
 
   await logUsage({
     userId: opts.userId,
